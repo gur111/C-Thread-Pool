@@ -25,7 +25,7 @@
 #ifdef THPOOL_DEBUG
 #define THPOOL_DEBUG 1
 #else
-#define THPOOL_DEBUG 0
+#define THPOOL_DEBUG 1
 #endif
 
 #if !defined(DISABLE_PRINT) || defined(THPOOL_DEBUG)
@@ -118,7 +118,7 @@ static void  bsem_wait(struct bsem *bsem_p);
 
 
 /* Initialise thread pool */
-struct thpool_* thpool_init(int num_threads){
+struct thpool_* ThreadPoolInit(int num_threads){
 
 	threads_on_hold   = 0;
 	threads_keepalive = 1;
@@ -131,7 +131,7 @@ struct thpool_* thpool_init(int num_threads){
 	thpool_* thpool_p;
 	thpool_p = (struct thpool_*)malloc(sizeof(struct thpool_));
 	if (thpool_p == NULL){
-		err("thpool_init(): Could not allocate memory for thread pool\n");
+		err("ThreadPoolInit(): Could not allocate memory for thread pool\n");
 		return NULL;
 	}
 	thpool_p->num_threads_alive   = 0;
@@ -139,7 +139,7 @@ struct thpool_* thpool_init(int num_threads){
 
 	/* Initialise the job queue */
 	if (jobqueue_init(&thpool_p->jobqueue) == -1){
-		err("thpool_init(): Could not allocate memory for job queue\n");
+		err("ThreadPoolInit(): Could not allocate memory for job queue\n");
 		free(thpool_p);
 		return NULL;
 	}
@@ -147,7 +147,7 @@ struct thpool_* thpool_init(int num_threads){
 	/* Make threads in pool */
 	thpool_p->threads = (struct thread**)malloc(num_threads * sizeof(struct thread *));
 	if (thpool_p->threads == NULL){
-		err("thpool_init(): Could not allocate memory for threads\n");
+		err("ThreadPoolInit(): Could not allocate memory for threads\n");
 		jobqueue_destroy(&thpool_p->jobqueue);
 		free(thpool_p);
 		return NULL;
@@ -161,7 +161,7 @@ struct thpool_* thpool_init(int num_threads){
 	for (n=0; n<num_threads; n++){
 		thread_init(thpool_p, &thpool_p->threads[n], n);
 #if THPOOL_DEBUG
-			printf("THPOOL_DEBUG: Created thread %d in pool \n", n);
+        printf("THPOOL_DEBUG: Created thread %d in pool \n", n);
 #endif
 	}
 
@@ -173,12 +173,12 @@ struct thpool_* thpool_init(int num_threads){
 
 
 /* Add work to the thread pool */
-int thpool_add_work(thpool_* thpool_p, void (*function_p)(void*), void* arg_p){
+int ThreadPoolInsertTask(thpool_* thpool_p, void (*function_p)(void*), void* arg_p){
 	job* newjob;
 
 	newjob=(struct job*)malloc(sizeof(struct job));
 	if (newjob==NULL){
-		err("thpool_add_work(): Could not allocate memory for new job\n");
+		err("ThreadPoolInsertTask(): Could not allocate memory for new job\n");
 		return -1;
 	}
 
@@ -204,7 +204,7 @@ void thpool_wait(thpool_* thpool_p){
 
 
 /* Destroy the threadpool */
-void thpool_destroy(thpool_* thpool_p){
+void ThreadPoolDestroy(thpool_* thpool_p){
 	/* No need to destory if it's NULL */
 	if (thpool_p == NULL) return ;
 
@@ -309,7 +309,7 @@ static void thread_hold(int sig_id) {
 /* What each thread is doing
 *
 * In principle this is an endless loop. The only time this loop gets interuppted is once
-* thpool_destroy() is invoked or the program exits.
+* ThreadPoolDestroy() is invoked or the program exits.
 *
 * @param  thread        thread that will run this function
 * @return nothing
@@ -320,7 +320,8 @@ static void* thread_do(struct thread* thread_p){
 	char thread_name[128] = {0};
 	sprintf(thread_name, "thread-pool-%d", thread_p->id);
 
-#if defined(__linux__)
+#if defined(__linux__)#define THPOOL_DEBUG 0
+
 	/* Use prctl instead to prevent using _GNU_SOURCE flag and implicit declaration */
 	prctl(PR_SET_NAME, thread_name);
 #elif defined(__APPLE__) && defined(__MACH__)
