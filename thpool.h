@@ -27,14 +27,14 @@ typedef struct thpool_* threadpool;
  *
  *    ..
  *    threadpool thpool;                     //First we declare a threadpool
- *    thpool = thpool_init(4);               //then we initialize it to 4 threads
+ *    thpool = ThreadPoolInit(4);               //then we initialize it to 4 threads
  *    ..
  *
  * @param  num_threads   number of threads to be created in the threadpool
  * @return threadpool    created threadpool on success,
  *                       NULL on error
  */
-threadpool thpool_init(int num_threads);
+threadpool ThreadPoolInit(int num_threads);
 
 
 /**
@@ -55,7 +55,7 @@ threadpool thpool_init(int num_threads);
  *    int main() {
  *       ..
  *       int a = 10;
- *       thpool_add_work(thpool, (void*)print_num, (void*)a);
+ *       ThreadPoolInsertTask(thpool, (void*)print_num, (void*)a);
  *       ..
  *    }
  *
@@ -64,7 +64,7 @@ threadpool thpool_init(int num_threads);
  * @param  arg_p         pointer to an argument
  * @return 0 on successs, -1 otherwise.
  */
-int thpool_add_work(threadpool, void (*function_p)(void*), void* arg_p);
+int ThreadPoolInsertTask(threadpool, void (*function_p)(void*), void* arg_p);
 
 
 /**
@@ -83,7 +83,7 @@ int thpool_add_work(threadpool, void (*function_p)(void*), void* arg_p);
  * @example
  *
  *    ..
- *    threadpool thpool = thpool_init(4);
+ *    threadpool thpool = ThreadPoolInit(4);
  *    ..
  *    // Add a bunch of work
  *    ..
@@ -108,7 +108,7 @@ void thpool_wait(threadpool);
  *
  * @example
  *
- *    threadpool thpool = thpool_init(4);
+ *    threadpool thpool = ThreadPoolInit(4);
  *    thpool_pause(thpool);
  *    ..
  *    // Add a bunch of work
@@ -145,10 +145,10 @@ void thpool_resume(threadpool);
  *
  * @example
  * int main() {
- *    threadpool thpool1 = thpool_init(2);
- *    threadpool thpool2 = thpool_init(2);
+ *    threadpool thpool1 = ThreadPoolInit(2);
+ *    threadpool thpool2 = ThreadPoolInit(2);
  *    ..
- *    thpool_destroy(thpool1);
+ *    ThreadPoolDestroy(thpool1);
  *    ..
  *    return 0;
  * }
@@ -156,7 +156,7 @@ void thpool_resume(threadpool);
  * @param threadpool     the threadpool to destroy
  * @return nothing
  */
-void thpool_destroy(threadpool);
+void ThreadPoolDestroy(threadpool);
 
 
 /**
@@ -166,8 +166,8 @@ void thpool_destroy(threadpool);
  *
  * @example
  * int main() {
- *    threadpool thpool1 = thpool_init(2);
- *    threadpool thpool2 = thpool_init(2);
+ *    threadpool thpool1 = ThreadPoolInit(2);
+ *    threadpool thpool2 = ThreadPoolInit(2);
  *    ..
  *    printf("Working threads: %d\n", thpool_num_threads_working(thpool1));
  *    ..
