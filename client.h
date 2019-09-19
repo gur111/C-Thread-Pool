@@ -21,7 +21,6 @@
 #include <sys/mman.h>
 
 #define IP_ADDR 0x7f000001
-#define PORT 50000
 
 
 

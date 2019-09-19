@@ -21,16 +21,15 @@
 
 
 
-#define PORT 50000
-
 #define NO_CHAR '-'
 #define SLOTS 4
 
 int answer;
 
 char *check_answer(int guess);
-void gen_rand__answer(void);
+void gen_rand_answer(void);
 void *get_in_addr(struct sockaddr *sa);
+void conn_handler(void *arg);
 
 
 #endif //THREADPOOL_SERVER_H
