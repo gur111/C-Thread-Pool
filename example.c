@@ -13,7 +13,6 @@
 
 #include <stdio.h>
 #include <pthread.h>
-#include <zconf.h>
 #include "thpool.h"
 
 
@@ -68,15 +67,21 @@ int main(){
 
 
 	int i;
+	// Task task[7] = [{(void*)task1, NULL},
+	// 				{(void*)task1, NULL},{(void*)task1, NULL}},
+	// 				{(void*)task1, NULL},
+	// 				{(void*)task1, NULL},
+	// 				{(void*)task1, NULL},
+	// 				{(void*)task1, NULL}];
 	for (i=0; i<2; i++){
         puts("Adding 7 tasks to threadpool");
-		ThreadPoolInsertTask(thpool, (void*)task1, NULL);
-		ThreadPoolInsertTask(thpool, (void*)task2, NULL);
-		ThreadPoolInsertTask(thpool, (void*)task3, NULL);
-		ThreadPoolInsertTask(thpool, (void*)task4, NULL);
-		ThreadPoolInsertTask(thpool, (void*)task5, NULL);
-		ThreadPoolInsertTask(thpool, (void*)task6, NULL);
-		ThreadPoolInsertTask(thpool, (void*)task7, NULL);
+		// ThreadPoolInsertTask(thpool, {(void*)task1, NULL});
+		// ThreadPoolInsertTask(thpool, (void*)task2, NULL);
+		// ThreadPoolInsertTask(thpool, (void*)task3, NULL);
+		// ThreadPoolInsertTask(thpool, (void*)task4, NULL);
+		// ThreadPoolInsertTask(thpool, (void*)task5, NULL);
+		// ThreadPoolInsertTask(thpool, (void*)task6, NULL);
+		// ThreadPoolInsertTask(thpool, (void*)task7, NULL);
 		sleep(2);
 	};
 

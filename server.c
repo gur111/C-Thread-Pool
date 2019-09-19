@@ -8,25 +8,18 @@
 
 #include "thpool.h"
 #include "server.h"
-#define PORT 8080
+#include "common.h"
 //#include "pthread.h"
 
-int main(int argc, char **argv)
+int main(void)
 {
-
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: './server port'\n");
-        fprintf(stderr, "Example: './server 8080'\n");
-        exit(-1);
-    }
 
     int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     int *arg;
-    
+    Task task;
     char *hello = "Hello from server";
     threadpool thpool = ThreadPoolInit(4);
 
@@ -37,9 +30,8 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    // Forcefully attaching socket to the port 8080
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
-                   &opt, sizeof(opt)))
+    // Forcefully attaching socket to the port PORT
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,&opt, sizeof(opt)))
     {
         perror("setsockopt");
         exit(EXIT_FAILURE);
@@ -48,7 +40,7 @@ int main(int argc, char **argv)
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
 
-    // Forcefully attaching socket to the port 8080
+    // Forcefully attaching socket to the port PORT
     if (bind(server_fd, (struct sockaddr *)&address,
              sizeof(address)) < 0)
     {
@@ -62,15 +54,14 @@ int main(int argc, char **argv)
     }
     while (1)
     {
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,
-                                 (socklen_t *)&addrlen)) < 0)
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address,(socklen_t *)&addrlen)) < 0)
         {
             perror("accept");
             exit(EXIT_FAILURE);
         }
-        arg = malloc(sizeof(int));
-        *arg = new_socket;
-        ThreadPoolInsertTask(thpool, (void *)conn_handler, (void *)arg);
+        *((int *) task.arg) = new_socket;
+        task.f = conn_handler;
+        ThreadPoolInsertTask(thpool, &task);
     }
     return 0;
 
@@ -87,25 +78,49 @@ void conn_handler(void *arg)
 {
     int game_id, guess, chars_read;
     int connfd = *((int *)arg);
-    char buffer[8] = {0};
-    char game_id_raw[5] = {0}, guess_raw[5] = {0};
+    GameNode *game_info;
+    char *response;
+    char buffer[GAME_ID_LEN+GUESS_LEN+1] = {0};
+    char game_id_raw[GAME_ID_LEN+1] = {0}, guess_raw[GUESS_LEN+1] = {0};
+    int flag=0;
     
-    chars_read = read(connfd, buffer, 8);
-    if(chars_read != 8){
-        send(connfd, "Invalid guess", strlen("Invalid guess"), 0);
+    chars_read = read(connfd, buffer, GAME_ID_LEN+GUESS_LEN);
+    if(chars_read != (GAME_ID_LEN+GUESS_LEN)){
+        send(connfd, INVALID_GUESS_MSG, strlen(INVALID_GUESS_MSG), 0);
         printf("Client sent an invalid guess");
         return;
     }
 
     printf("Data recv: %s\n", buffer);
-    memcpy(buffer, game_id_raw, 4);
-    memcpy(buffer+4, guess_raw, 4);
+    memcpy(buffer, game_id_raw, GAME_ID_LEN);
+    memcpy(buffer+GAME_ID_LEN, guess_raw, GUESS_LEN);
     guess = atoi(guess_raw);
     game_id = atoi(game_id_raw);
-    
-    send(connfd, "Hello", strlen("Hello"), 0);
-    sleep(5);
-    printf("Hello message sent\n");
+
+    // Check if a new game is requested
+    if(!strcmp(game_id_raw, NEW_GAME_CMD)){
+        // TODO: Handle creating new game
+    }
+
+    // TODO: Check if game_id is valid
+    if(game_id!=0){
+        //todo: go over the list and check if there is the same game_id requested
+        flag=1;//valid 
+
+    }
+    if (flag==1){
+        // TODO: Get the game info using the game id
+
+        // TODO: Compare answer with the guess
+    }
+
+
+    response = check_answer(game_info->answer, guess);
+
+
+    send(connfd, response, strlen(response), 0);
+    sleep(5);// TODO: Remove this line
+    printf("Response sent\n");
 }
 
 void gen_rand_answer(void)
@@ -124,7 +139,7 @@ void gen_rand_answer(void)
 //    return &(((struct sockaddr_in6 *) sa)->sin6_addr);
 //}
 
-char *check_answer(int guess)
+char *check_answer(int answer, int guess)
 {
     int i, k;
     char *local_answer = malloc(SLOTS + 1);

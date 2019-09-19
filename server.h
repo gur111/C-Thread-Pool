@@ -24,9 +24,20 @@
 #define NO_CHAR '-'
 #define SLOTS 4
 
-int answer;
 
-char *check_answer(int guess);
+typedef struct GameNode{
+    int answer;
+    int game_id;
+    int last_guess;
+    struct GameNode *_next;
+}GameNode;
+
+typedef struct GameList{
+    _head;
+    int count;
+}GameList;
+
+char *check_answer(int answer, int guess);
 void gen_rand_answer(void);
 void *get_in_addr(struct sockaddr *sa);
 void conn_handler(void *arg);

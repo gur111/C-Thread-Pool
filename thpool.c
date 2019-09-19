@@ -1,14 +1,3 @@
-/* ********************************
- * Author:       Johan Hanssen Seferidis
- * License:	     MIT
- * Description:  Library providing a threading pool where you can add
- *               work. For usage, check the thpool.h file or README.md
- *
- */
-/** @file thpool.h */ /*
- *
- ********************************/
-
 #define _POSIX_C_SOURCE 200809L
 #include <unistd.h>
 #include <signal.h>
@@ -52,8 +41,7 @@ typedef struct bsem
 typedef struct job
 {
 	struct job *prev;			 /* pointer to previous job   */
-	void (*function)(void *arg); /* function pointer          */
-	void *arg;					 /* function's argument       */
+	struct Task *task; 			 /* contains the function pointer and the pointer to the arg */
 } job;
 
 /* Job queue */
@@ -155,9 +143,9 @@ struct thpool_ *ThreadPoolInit(int num_threads)
 	for (n = 0; n < num_threads; n++)
 	{
 		thread_init(thpool_p, &thpool_p->threads[n], n);
-#if THPOOL_DEBUG
-		printf("THPOOL_DEBUG: Created thread %d in pool \n", n);
-#endif
+		#if THPOOL_DEBUG
+			printf("THPOOL_DEBUG: Created thread %d in pool \n", n);
+		#endif
 	}
 
 	/* Wait for threads to initialize */
@@ -169,11 +157,10 @@ struct thpool_ *ThreadPoolInit(int num_threads)
 }
 
 /* Add work to the thread pool */
-/* TODO: Instead of getting function and arg for the function,
-this needs to get a struct containing a function and arg for the function */
-int ThreadPoolInsertTask(thpool_ *thpool_p, void (*function_p)(void *), void *arg_p)
+int ThreadPoolInsertTask(thpool_ *thpool_p, Task *task)
 {
 	job *newjob;
+	Task *task_copy;
 
 	newjob = (struct job *)malloc(sizeof(struct job));
 	if (newjob == NULL)
@@ -183,8 +170,9 @@ int ThreadPoolInsertTask(thpool_ *thpool_p, void (*function_p)(void *), void *ar
 	}
 
 	/* add function and argument */
-	newjob->function = function_p;
-	newjob->arg = arg_p;
+	task_copy = malloc(sizeof(struct Task));
+	memcpy(task_copy, task, sizeof(struct Task));
+	newjob->task = task_copy;
 
 	/* add job to queue */
 	jobqueue_push(&thpool_p->jobqueue, newjob);
@@ -344,8 +332,8 @@ static void *thread_do(struct thread *thread_p)
 			job *job_p = jobqueue_pull(&thpool_p->jobqueue);
 			if (job_p)
 			{
-				func_buff = job_p->function;
-				arg_buff = job_p->arg;
+				func_buff = job_p->task->f;
+				arg_buff = job_p->task->arg;
 				func_buff(arg_buff);
 				free(job_p);
 			}
