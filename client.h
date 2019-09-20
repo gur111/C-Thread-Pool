@@ -19,8 +19,13 @@
 #include <netdb.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
+#include <ctype.h>
 
 #define IP_ADDR 0x7f000001
+#define BUFFER_SIZE 1024
+
+int get_conn(void);
+void communicate_guess(char *req, char *result_dest, size_t size);
 
 
 
