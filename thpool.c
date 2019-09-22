@@ -215,6 +215,7 @@ void ThreadPoolDestroy(thpool_ *thpool_p) {
     while (thpool_p->num_threads_alive) {
         bsem_post_all(thpool_p->jobqueue.has_jobs);
         sleep(1);
+        printf("sdfdsf\n");
     }
 
     /* Job queue cleanup */

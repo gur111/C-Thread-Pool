@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <pthread.h>
 
 #include "thpool.h"
 #include "server.h"
@@ -14,13 +15,44 @@
 #include "game_list.h"
 
 int main(void) {
-
-    int server_fd, new_socket;
-    struct sockaddr_in address;
-    int opt = 1;
-    int addrlen = sizeof(address);
-    Task task = {0};
+    char input_cmd[CMD_MAX_LEN] = {0};
     threadpool thpool = ThreadPoolInit(4);
+    pthread_t conn_listener_thread;
+
+    { // Create thread to run the connection listener in
+        pthread_create(&conn_listener_thread, NULL, (void * (*)(void *)) &conn_listener, thpool);
+        pthread_detach(conn_listener_thread);
+    }
+
+    printf("Welcome admin. From here you can enter commands to the server\n"
+           "The available commands are:\n"
+           "list and quit.\n"
+           "Please do NOT enter commands longer than that.\n");
+    // Handle admin commands
+    while (1) {
+        printf("$ ");
+        // %xs while x is a number means that we limit the input token length to at most x chars
+        scanf("%"STR(CMD_MAX_LEN)"s", input_cmd);
+        if (!strncmp(input_cmd, LIST, strlen(LIST))) {
+            listGames();
+        } else if (!strncmp(input_cmd, QUIT, strlen(QUIT))) {
+            printf("Shutting down server...\n");
+            ThreadPoolDestroy((threadpool) thpool);
+            printf("YOOOO!\n");
+            exit(0);
+            return 0;
+        }else{
+            printf("%s: Command not found\n", input_cmd);
+        }
+    }
+}
+
+int conn_listener(void *pool) {
+    Task task = {0};
+    struct sockaddr_in address;
+    int server_fd, new_socket,
+            opt = 1,
+            addrlen = sizeof(address);
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -47,6 +79,8 @@ int main(void) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
+
+    // Main listener loop
     while (1) {
         if ((new_socket = accept(server_fd, (struct sockaddr *) &address, (socklen_t * ) & addrlen)) < 0) {
             perror("accept");
@@ -55,10 +89,8 @@ int main(void) {
         task.arg = malloc(sizeof(int *));
         *((int *) task.arg) = new_socket;
         task.f = &conn_handler;
-        ThreadPoolInsertTask(thpool, &task);
+        ThreadPoolInsertTask(pool, &task);
     }
-
-    return 0;
 }
 
 void conn_handler(void *arg) {
@@ -76,8 +108,6 @@ void conn_handler(void *arg) {
         return;
     }
 
-    listGames();
-
     memcpy(game_id_raw, buffer, GAME_ID_LEN);
     memcpy(guess_raw, buffer + GAME_ID_LEN, GUESS_LEN);
     printf("Data recv: %s%s\n", game_id_raw, guess_raw);
@@ -93,22 +123,21 @@ void conn_handler(void *arg) {
             send(connfd, SERVER_ERROR, strlen(SERVER_ERROR), 0);
             return;
         } else {
-            game_info = createGame(gen_rand_answer(), /* id: */ game._tail->game_id+1, guess);
+            game_info = createGame(gen_rand_answer(), /* id: */ game._tail->game_id + 1, guess);
         }
         sprintf(game_id_raw, "%0"STR(GAME_ID_LEN)"d", game_info->game_id);
-    }else{
+    } else {
         game_info = getGame(game_id, guess);
     }
 
-    if(game_info == NULL){
-        perror("game_info is NULL");
-        send(connfd, SERVER_ERROR, strlen(SERVER_ERROR), 0);
+    if (game_info == NULL) {
+        send(connfd, OLD_GAME_ERROR, strlen(OLD_GAME_ERROR), 0);
         return;
     }
 
     response = check_answer(game_info->answer, guess);
     // concat game_id right after the response string
-    response = realloc(response, strlen(response)+GAME_ID_LEN+1);
+    response = realloc(response, strlen(response) + GAME_ID_LEN + 1);
     if (!response) {
         perror("Allocation");
         return;
@@ -116,7 +145,7 @@ void conn_handler(void *arg) {
     response = strncat(response, game_id_raw, GAME_ID_LEN);
 
     // Check if game is over
-    if((response[0] - '0') == GUESS_LEN) {
+    if ((response[0] - '0') == GUESS_LEN) {
         deleteGame(game_info->game_id);
         response = realloc(response, GUESS_LEN + strlen(GAME_OVER_MSG) + 1);
         if (!response) {
@@ -127,22 +156,15 @@ void conn_handler(void *arg) {
     }
 
     send(connfd, response, strlen(response), 0);
-
-    sleep(4);
-    printf("%d\n", game_info->answer);
+    free(arg); // Since we got it using malloc in the main loop
     free(game_info);
     free(response);
     return;
 }
 
-void admin_handler(){
-    // TODO: Implement Admin handler "branched" from the conn_handler
-}
-
 int gen_rand_answer(void) {
     srand(time(NULL)); // Initialization, should only be called once.
     // Gets 4 digits randomly
-
     return rand() % ((int) pow(10, SLOTS)); // %10,000 is the last 4 digits (0-9999)
 }
 
@@ -176,11 +198,11 @@ char *check_answer(int answer, int guess) {
     }
 
     for (i = 0; i < SLOTS; i++) {
-        if(local_answer[i] == NO_CHAR)
+        if (local_answer[i] == NO_CHAR)
             continue; // Skip NO_CHAR
 
         for (k = 0; k < SLOTS; k++) {
-            if(local_guess[k] == NO_CHAR)
+            if (local_guess[k] == NO_CHAR)
                 continue; // Skip NO_CHAR
 
             if (local_answer[i] == local_guess[k]) {

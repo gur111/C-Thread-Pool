@@ -87,7 +87,7 @@ void communicate_guess(char *req, char *result_dest, size_t size){
     valread = read(sock, result_dest, size);
 
     if(valread < 0) {
-        printf("Ohh no, I got an invalid response from the server. Srver returned: %s", strerror(errno));
+        printf("Ohh no, I got an invalid response from the server. Server returned: %s", strerror(errno));
         exit(-1);
     }else if(valread < GAME_ID_LEN+CHECK_LEN){
         printf("Server returned too short an answer %s", result_dest);

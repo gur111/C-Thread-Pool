@@ -11,6 +11,7 @@
 
 #define INVALID_GUESS_MSG "-_-_-_-_The guess is invalid" // Because we need it to be after GAME_ID_LEN+CHECK_LEN chars
 #define SERVER_ERROR "-_-_-_-_Internal Server Error"  //  Same
+#define OLD_GAME_ERROR "-_-_-_-_Game does not exist anymore"  //  Same
 #define GAME_OVER_MSG "\nYou WON!"
 
 #define PORT 8080
