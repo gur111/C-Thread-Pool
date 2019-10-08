@@ -1,4 +1,3 @@
-// Server side C/C++ program to demonstrate Socket programming
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -38,7 +37,6 @@ int main(void) {
         } else if (!strncmp(input_cmd, QUIT, strlen(QUIT))) {
             printf("Shutting down server...\n");
             ThreadPoolDestroy((threadpool) thpool);
-            printf("YOOOO!\n");
             exit(0);
             return 0;
         }else{
@@ -50,9 +48,7 @@ int main(void) {
 int conn_listener(void *pool) {
     Task task = {0};
     struct sockaddr_in address;
-    int server_fd, new_socket,
-            opt = 1,
-            addrlen = sizeof(address);
+    int server_fd, new_socket, opt = 1, addrlen = sizeof(address);
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -87,6 +83,10 @@ int conn_listener(void *pool) {
             exit(EXIT_FAILURE);
         }
         task.arg = malloc(sizeof(int *));
+        if(!task.arg){
+			perror("Allocation");
+            exit(EXIT_FAILURE);
+        }
         *((int *) task.arg) = new_socket;
         task.f = &conn_handler;
         ThreadPoolInsertTask(pool, &task);
@@ -94,8 +94,7 @@ int conn_listener(void *pool) {
 }
 
 void conn_handler(void *arg) {
-    int game_id, guess, chars_read;
-    int connfd = *((int *) arg);
+    int game_id, guess, chars_read, connfd = *((int *) arg);
     GameNode *game_info;
     char *response;
     char buffer[GAME_ID_LEN + GUESS_LEN + 1] = {0};
@@ -168,23 +167,27 @@ int gen_rand_answer(void) {
     return rand() % ((int) pow(10, SLOTS)); // %10,000 is the last 4 digits (0-9999)
 }
 
-//// get sockaddr, IPv4 or IPv6:
-//void *get_in_addr(struct sockaddr *sa) {
-//    if (sa->sa_family == AF_INET) {
-//        return &(((struct sockaddr_in *) sa)->sin_addr);
-//    }
-//
-//    return &(((struct sockaddr_in6 *) sa)->sin6_addr);
-//}
-
+//checks if the answer the client gave is equal to the server data
 char *check_answer(int answer, int guess) {
-    int i, k;
+    int i, k, misplaced_counter = 0, correct_counter = 0;
     char *local_answer = malloc(SLOTS + 1);
+    if(!local_answer){
+		perror("Allocation");
+        exit(EXIT_FAILURE);
+    }
     char *local_guess = malloc(SLOTS + 1);
+    if(!local_guess){
+        free(local_answer);
+		perror("Allocation");
+        exit(EXIT_FAILURE);
+    }
     char *response = malloc(GUESS_LEN + 1);
-
-    int misplaced_counter = 0;
-    int correct_counter = 0;
+    if(!response){
+        free(local_answer);
+        free(local_guess);
+		perror("Allocation");
+        exit(EXIT_FAILURE);
+    }
 
     // Convert integers to strings
     sprintf(local_answer, "%04d", answer);

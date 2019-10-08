@@ -1,7 +1,3 @@
-//
-// Created by gur on 9/14/19.
-//
-
 #ifndef THREADPOOL_CLIENT_H
 #define THREADPOOL_CLIENT_H
 

@@ -1,7 +1,3 @@
-//
-// Created by gur on 9/19/19.
-//
-
 #ifndef C_THREAD_POOL_GAME_LIST_H
 #define C_THREAD_POOL_GAME_LIST_H
 

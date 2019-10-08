@@ -1,4 +1,3 @@
-// Client side C/C++ program to demonstrate Socket programming 
 #include <stdio.h> 
 #include <sys/socket.h> 
 #include <arpa/inet.h> 
@@ -20,15 +19,14 @@ int main(void) {
         printf("Welcome to Bulls&Cows. Please enter your guess (must be " STR(GUESS_LEN) " digits): ");
         scanf("%"STR(GUESS_LEN)"s", guess);
         if (strlen(guess) != GUESS_LEN) {
-            printf("Wrong guess length entered %d while expected "STR(GUESS_LEN)"\n", (int) strlen(guess));
-            perror("Length");
+            printf("Wrong guess length.\n");
             return -1;
         }
 
         // Validate guess characters
         for(i = 0; i<GUESS_LEN; i++){
             if(!isdigit(guess[i])){
-                perror("Not a digit");
+                printf("Not a digit");
                 return -1;
             }
         }
@@ -61,8 +59,7 @@ int main(void) {
             printf("Enter another guess: ");
             scanf("%"STR(GUESS_LEN)"s", guess);
             if (strlen(guess) != GUESS_LEN) {
-                printf("Wrong guess length entered %d while expected "STR(GUESS_LEN)"\n", (int) strlen(guess));
-                perror("Length");
+                printf("Wrong guess length.\n");
                 return -1;
             }
 
@@ -101,7 +98,7 @@ int get_conn(void){
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        printf("\n Socket creation error \n");
+        perror("\n Socket creation error \n");
         exit(-1);
     }
     serv_addr.sin_family = AF_INET;
@@ -110,7 +107,7 @@ int get_conn(void){
     // Convert IPv4 and IPv6 addresses from text to binary form
     if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)
     {
-        printf("\nInvalid address/ Address not supported \n");
+        perror("\nInvalid address/ Address not supported \n");
         exit(-1);
     }
 
